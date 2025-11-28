@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  labels:
+    db: store-postgres
+data:
+  init.sql: |
+    CREATE DATABASE storedb_catalog;
+    CREATE DATABASE storedb_order;
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: store-postgres
+  labels:
+    db: store-postgres
+spec:
+  selector:
+    matchLabels:
+      db: store-postgres
+  template:
+    metadata:
+      labels:
+        db: store-postgres
+    spec:
+      containers:
+        - name: store-postgres
+          image: postgres:latest
+          env:
+            - name: POSTGRES_USER
+              value: user
+            - name: POSTGRES_PASSWORD
+              value: password
+          resources:
+            requests:
+              cpu: 100m
+              memory: 60Mi
+            limits:
+              cpu: 200m
+              memory: 120Mi
+          volumeMounts:
+            - mountPath: /docker-entrypoint-initdb.d
+              name: postgres-config-volume
+      volumes:
+        - name: postgres-config-volume
+          configMap:
+            name: postgres-config
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: store-postgres
+  labels:
+    db: store-postgres
+spec:
+  type: ClusterIP
+  selector:
+    db: store-postgres
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
