@@ -24,7 +24,7 @@ services:
   #      options:
   #        fluentd-address: 127.0.0.1:24224
   catalog-service:
-    image: catalog-service:0.0.1-SNAPSHOT
+    image: catalog-service:latest
     container_name: catalog-service
     ports:
       - "9002:9002"
@@ -37,6 +37,23 @@ services:
       - DB_PASSWORD=password
       - SPRING_DATASOURCE_URL=jdbc:postgresql://store-postgres:5432/storedb_catalog
       - SPRING_PROFILES_ACTIVE=testdata
+    depends_on:
+      - store-postgres
+
+  order-service:
+    image: order-service:latest
+    container_name: order-service
+    ports:
+      - "9003:9003"
+      - "8003:8003"
+    environment:
+      - BPL_DEBUG_ENABLED=true
+      - BPL_DEBUG_PORT=8003
+      - BPL_JVM_THREAD_COUNT=50
+      - DB_USER=user
+      - DB_PASSWORD=password
+      - SPRING_DATASOURCE_URL=r2dbc:postgresql://store-postgres:5432/storedb_order
+      - FLYWAY_DB_URL=jdbc:postgresql://store-postgres:5432/storedb_order
     depends_on:
       - store-postgres
 
@@ -54,6 +71,13 @@ services:
       - ./postgresql/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   # Observability
+  grafana-lgtm:
+    image: grafana/otel-lgtm:latest
+    ports:
+      - "3000:3000"
+      - "4317:4317"
+      - "4318:4318"
+
 #  prometheus:
 #    image: prom/prometheus:latest
 #    container_name: prometheus
@@ -111,4 +135,4 @@ services:
 
 volumes:
   store-postgres: { }
-  #grafana-storage:
+  #grafana-lgtm-storage:
